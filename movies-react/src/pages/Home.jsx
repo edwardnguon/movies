@@ -1,21 +1,40 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/Home.css';
+import axios from 'axios';
 
 import MovieCard from '../components/MovieCard';
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const movies = [
-    {id: 1, title: "Movie1", release_date: 2020},
-    {id: 2, title: "Movie2", release_date: 2021},
-    {id: 3, title: "Movie3", release_date: 2022},
-  ];
+  const [movies, setMovies] = useState([]);
+
+  const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+  const BASE_URL = 'https://api.themoviedb.org/3';
+
+  const fetchPopularMovies = () => {
+    axios.get(`${BASE_URL}/movie/popular?api_key=${API_KEY}`)
+      .then((response) => setMovies(response.data.results))
+      .catch((error) => console.error("Error fetching movie data: ", error)); 
+  }
+
+  useEffect(() => {
+    fetchPopularMovies();
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log(searchQuery);
   };
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      fetchPopularMovies();
+      return;
+    }
+
+    axios.get(`${BASE_URL}/search/movie?query=${searchQuery}&api_key=${API_KEY}`)
+    .then((response) => setMovies(response.data.results))
+    .catch((error) => console.error("Error fetching movie data: ", error));
+  }, [searchQuery]);
 
   return (
     <div className="home">
@@ -27,9 +46,14 @@ const Home = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <button type="submit" className="search-button">Search</button>
+      {/*<button type="submit" className="search-button">Search</button>*/}
       </form>
-      {movies.map((movie) => (<MovieCard movie={movie} key={movie.id}/>))}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-4 gap-x-5">
+        {movies.map((movie) => (
+          <MovieCard movie={movie} key={movie.id} />
+        ))}
+      </div>
+
     </div>
   );
 }
